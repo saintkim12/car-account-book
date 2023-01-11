@@ -1,0 +1,3 @@
+<template>
+  AppConfig page
+</template>
