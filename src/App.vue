@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Ref, ref } from 'vue'
+import { onMounted, Ref, ref, unref, watch } from 'vue'
+import localforage from 'localforage'
 import AddItem from './components/AddItem.vue'
 import DisplayItem from './components/DisplayItem.vue'
 import AppConfig from './components/AppConfig.vue'
@@ -11,6 +12,25 @@ const items: Ref<CarAccountItem[]> = ref([])
 const addItem = (newItem: CarAccountItem) => {
   items.value.push(newItem)
 }
+const clearItems = async () => {
+  items.value = []
+  await localforage.setItem('items', [])
+}
+onMounted(async () => {
+  console.log('localforage', localforage)
+  try {
+    const storedItems = (await localforage.getItem<CarAccountItem[]>('items')) ?? []
+    items.value = storedItems
+  } catch (e) {
+    console.error(e)
+  }
+  watch(items, (v) => {
+    console.log('items', JSON.parse(JSON.stringify(v)))
+    localforage.setItem('items', JSON.parse(JSON.stringify(v))).then(async () => {
+      console.log('items', (await localforage.getItem<CarAccountItem[]>('items')))
+    })
+  }, { deep: true })
+})
 </script>
 
 <template>
@@ -20,6 +40,7 @@ const addItem = (newItem: CarAccountItem) => {
         <button class="button" @click="page = 'addItem'">AddItem</button>
         <button @click="page = 'displayItem'">DisplayItem</button>
         <button @click="page = 'appConfig'">AppConfig</button>
+        <button @click="clearItems">clearItems</button>
       </div>
       <div class="column">
         <template v-if="page === 'addItem'">
@@ -49,16 +70,13 @@ const addItem = (newItem: CarAccountItem) => {
 <style lang="scss">
 @import 'bulma/bulma.sass';
 </style>
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
+<style>
+html, body, #app {
+  width: 100%;
+  height: 100%;
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+html, body, #app {
+  margin: 0;
+  padding: 0;
 }
 </style>
